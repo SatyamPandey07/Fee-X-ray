@@ -179,6 +179,52 @@ To avoid blocking request threads, transaction analysis runs asynchronously in a
 
 ---
 
+## Service Integration & RabbitMQ Orchestration
+
+Fee X-ray connects the Java Core Service and Python Analysis Engine using a decoupled asynchronous messaging model powered by RabbitMQ.
+
+### Communication Flow & Sequence Diagram
+1. The user logs in and triggers an analysis run via frontend `POST /api/v1/analysis/run`.
+2. Java Core Service writes a local `AnalysisJob` tracking record in state `PENDING`.
+3. Java Core Service publishes a job message containing `{jobId, orgId}` to RabbitMQ exchange `analysis.exchange` (routing key `analysis.request.key`).
+4. Python Analysis Engine has a concurrent listener thread that consumes from queue `analysis.request.queue`.
+5. Python daemon receives the job, invokes the Rules Engine, analyzes transaction records, and saves the new findings.
+6. Python daemon publishes a completion status report containing `{jobId, orgId, status: "COMPLETED", summary}` back to RabbitMQ exchange (routing key `analysis.response.key`).
+7. Java Core Service consumes from queue `analysis.response.queue` via `@RabbitListener` and updates the job status and summary.
+8. Frontend polls `GET /api/v1/analysis/jobs/{jobId}` to check status and render findings to the user.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Client / User
+    participant CS as Java Core Service
+    participant RMQ as RabbitMQ Broker
+    participant AE as Python Analysis Engine
+    participant DB as Postgres Databases
+
+    User->>CS: POST /api/v1/analysis/run (JWT Auth)
+    CS->>DB: Create AnalysisJob (PENDING)
+    CS->>RMQ: Publish Request (analysis.request.key)
+    CS-->>User: 202 Accepted {jobId, status: PENDING}
+    
+    RMQ->>AE: Consume Job Message (analysis.request.queue)
+    AE->>DB: Fetch sync'd Plaid Transactions
+    AE->>AE: Run 4 fee detection rules modules
+    AE->>DB: Clear old & Save new Findings
+    AE->>RMQ: Publish Completion Message (analysis.response.key)
+    
+    RMQ->>CS: Consume completion callback (analysis.response.queue)
+    CS->>DB: Update AnalysisJob (COMPLETED, summary)
+    
+    loop Status Polling
+        User->>CS: GET /api/v1/analysis/jobs/{jobId}
+        CS->>DB: Read status
+        CS-->>User: status: COMPLETED, resultsSummary: "Found..."
+    end
+```
+
+---
+
 ## Roadmap & Upcoming Phases
 
 - **Phase 1: Monorepo Scaffolding & Orchestration** [COMPLETED]
@@ -202,7 +248,10 @@ To avoid blocking request threads, transaction analysis runs asynchronously in a
 - **Phase 6: Fee Detection Engine** [COMPLETED]
   - Processor rate benchmarking, zombie subscription detection, unwaived bank fees, and undisputed chargeback rules.
   - Celery background worker running Redis queue.
-- **Phase 7: Premium Dashboard UI**
+- **Phase 7: Service Integration & Asynchronous Messaging** [COMPLETED]
+  - Decoupled messaging over RabbitMQ exchanges, request/response queues, and routing keys.
+  - Core service status polling endpoints and Python daemon threads.
+- **Phase 8: Premium Dashboard UI**
   - Building the Next.js frontend with full support for user roles, connected accounts, and savings visualization.
-- **Phase 8: Observability, Metrics & Sentry**
+- **Phase 9: Observability, Metrics & Sentry**
   - Setting up Prometheus metrics collection, Grafana dashboards, and Sentry tracking.
