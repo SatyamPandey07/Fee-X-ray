@@ -9,4 +9,5 @@ import java.util.UUID;
 @Repository
 public interface BankConnectionRepository extends JpaRepository<BankConnection, UUID> {
     List<BankConnection> findByOrganizationId(UUID organizationId);
+    long countByOrganizationId(UUID organizationId);
 }

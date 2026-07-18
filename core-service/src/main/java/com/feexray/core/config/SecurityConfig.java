@@ -25,6 +25,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/api/v1/public/**").permitAll()
+                .requestMatchers("/api/v1/billing/webhook").permitAll()
+                .requestMatchers("/api/v1/billing/checkout", "/api/v1/billing/portal").authenticated()
                 .requestMatchers("/api/v1/orgs/**", "/api/v1/users/**").authenticated()
                 .anyRequest().authenticated()
             )
