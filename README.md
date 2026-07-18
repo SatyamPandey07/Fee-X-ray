@@ -140,6 +140,25 @@ Our `EntitlementService` verifies connection limits. If a FREE tier organization
 
 ---
 
+## Bank Connections & Security (Plaid Integration)
+
+Fee X-ray connects to user bank accounts via Plaid to securely synchronize financial transactions.
+
+### Plaid Token Security
+Plaid access tokens represent direct access to a business's banking details and are treated with enterprise-grade security protocols:
+- **Encryption at Rest**: Access tokens are never stored in plain-text. They are encrypted using `cryptography`'s AES-128 Fernet cipher prior to SQL insertion.
+- **Key Rotation**: The encryption key is sourced dynamically from the `ENCRYPTION_KEY` environment variable.
+
+### API Endpoints (Python Analysis Engine)
+- `POST /api/v1/plaid/link-token`: Creates a Plaid Link Token configured for the sandbox environment to initialize the Plaid SDK on the frontend.
+- `POST /api/v1/plaid/exchange-token`: Receives `public_token` and exchanges it for `access_token` and `item_id`. This endpoint:
+  1. Validates the user's OIDC JWT.
+  2. Enforces organization boundaries (verifying user's token `org_id` matches the request body `org_id` to block cross-organization tampering).
+  3. Saves the encrypted access token in the `plaid_connections` table.
+  4. Triggers an automatic sandbox transaction sync, loading transactions into the `transactions` table.
+
+---
+
 ## Roadmap & Upcoming Phases
 
 - **Phase 1: Monorepo Scaffolding & Orchestration** [COMPLETED]
@@ -156,10 +175,10 @@ Our `EntitlementService` verifies connection limits. If a FREE tier organization
   - Multi-tier billing (Free vs Pro) using Stripe Subscriptions.
   - Webhook handlers with mandatory signature verification.
   - Connection limit entitlement gates and Billing dashboard UI.
-- **Phase 5: Bank Connection & Analysis Engine**
+- **Phase 5: Bank Connection & Analysis Engine** [COMPLETED]
   - Plaid sandbox integration and transaction sync.
-  - Plaid token encryption and storage.
-  - 8-rule custom fee detection logic.
+  - Plaid token encryption at rest.
+  - OIDC JWT access verification and cross-tenant boundaries.
 - **Phase 6: Premium Dashboard UI**
   - Building the Next.js frontend with full support for user roles, connected accounts, and savings visualization.
 - **Phase 7: Observability, Metrics & Sentry**
