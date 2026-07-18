@@ -1,0 +1,38 @@
+{
+  "id": "fee-xray",
+  "realm": "fee-xray",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMIN",
+        "description": "Administrator role"
+      },
+      {
+        "name": "ANALYST",
+        "description": "Analyst role"
+      },
+      {
+        "name": "VIEWER",
+        "description": "Viewer role"
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@feexray.local",
+      "firstName": "Demo",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo-admin-password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN"]
+    }
+  ]
+}

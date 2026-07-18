@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # ── Core Service (Java) ──────────────────────────────────────
+  core-service:
+    build:
+      context: ../core-service
+      dockerfile: Dockerfile
+    container_name: fee-xray-core-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_CORE_URL=jdbc:postgresql://postgres-core:5432/feexray_core
+    depends_on:
+      - postgres-core
+      - rabbitmq
+
+  # ── Analysis Engine (Python) ──────────────────────────────────
+  analysis-engine:
+    build:
+      context: ../analysis-engine
+      dockerfile: Dockerfile
+    container_name: fee-xray-analysis-engine
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://feexray:changeme@postgres-analysis:5432/feexray_analysis
+    depends_on:
+      - postgres-analysis
+      - redis
+
+  # ── Frontend (Next.js) ───────────────────────────────────────
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: fee-xray-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - core-service
+      - analysis-engine
+
+  # ── Postgres (Core DB) ───────────────────────────────────────
+  postgres-core:
+    image: postgres:16-alpine
+    container_name: fee-xray-postgres-core
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=feexray_core
+      - POSTGRES_USER=feexray
+      - POSTGRES_PASSWORD=changeme
+    volumes:
+      - pg-core-data:/var/lib/postgresql/data
+
+  # ── Postgres (Analysis DB) ───────────────────────────────────
+  postgres-analysis:
+    image: postgres:16-alpine
+    container_name: fee-xray-postgres-analysis
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=feexray_analysis
+      - POSTGRES_USER=feexray
+      - POSTGRES_PASSWORD=changeme
+    volumes:
+      - pg-analysis-data:/var/lib/postgresql/data
+
+  # ── Redis (Celery/Broker) ────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: fee-xray-redis
+    ports:
+      - "6379:6379"
+
+  # ── RabbitMQ (Async Messaging) ───────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: fee-xray-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=feexray
+      - RABBITMQ_DEFAULT_PASS=changeme
+
+  # ── Keycloak (Identity Provider) ──────────────────────────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.5
+    container_name: fee-xray-keycloak
+    command: start-dev --import-realm
+    ports:
+      - "8080:8080"
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=changeme
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+
+volumes:
+  pg-core-data:
+  pg-analysis-data:
