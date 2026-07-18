@@ -159,6 +159,26 @@ Plaid access tokens represent direct access to a business's banking details and 
 
 ---
 
+## How Fee Detection Works
+
+Fee X-ray relies on a modular rules engine to evaluate sync'd transaction data, flagging potential savings.
+
+### Modular Rules
+1. **Processor Rate Benchmarking**: Compares card-processing fees (Stripe, PayPal, etc.) against interchange-plus benchmarks. If the effective fee rate exceeds 3.5%, it calculates the annual excess cost and flags it.
+2. **Zombie Subscription Detection**: Identifies recurring transactions to SaaS merchants (e.g. Zoom, Adobe, Slack, Dropbox) that have had no user utility or activity recorded in the past 90+ days.
+3. **Unwaived Bank Fee Detection**: Detects typical commercial bank service charges (overdraft, wire fees, monthly maintenance) that can commonly be waived by the financial institution upon courtesy request.
+4. **Undisputed Chargeback Detection**: Identifies customer payment disputes/chargebacks that lack matching reversal or dispute wins. It alerts the user to respond before the dispute window expires.
+
+### Rules Engine
+The Rules Engine aggregates findings from each detector, cleanses past results for the tenant organization, persists them in the `findings` table, and returns them sorted descending by `dollar_impact`.
+
+### Async Background Tasks (Celery + Redis)
+To avoid blocking request threads, transaction analysis runs asynchronously in a Celery background worker:
+- **Broker**: Redis (`redis://localhost:6379/0`)
+- **Task**: `app.tasks.analyze_org_fees(org_id)`
+
+---
+
 ## Roadmap & Upcoming Phases
 
 - **Phase 1: Monorepo Scaffolding & Orchestration** [COMPLETED]
@@ -179,7 +199,10 @@ Plaid access tokens represent direct access to a business's banking details and 
   - Plaid sandbox integration and transaction sync.
   - Plaid token encryption at rest.
   - OIDC JWT access verification and cross-tenant boundaries.
-- **Phase 6: Premium Dashboard UI**
+- **Phase 6: Fee Detection Engine** [COMPLETED]
+  - Processor rate benchmarking, zombie subscription detection, unwaived bank fees, and undisputed chargeback rules.
+  - Celery background worker running Redis queue.
+- **Phase 7: Premium Dashboard UI**
   - Building the Next.js frontend with full support for user roles, connected accounts, and savings visualization.
-- **Phase 7: Observability, Metrics & Sentry**
+- **Phase 8: Observability, Metrics & Sentry**
   - Setting up Prometheus metrics collection, Grafana dashboards, and Sentry tracking.
