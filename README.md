@@ -117,6 +117,29 @@ To hook up an enterprise SAML Identity Provider (IdP) in Keycloak:
 
 ---
 
+---
+
+## Billing & Stripe Integration
+
+Fee X-ray supports multi-tiered billing using Stripe Subscriptions in test mode.
+
+### Plan Tiers
+- **FREE**: Limited to exactly 1 active bank connection. Auto-analysis runs are disabled.
+- **PRO**: Unlimited bank connections and scheduled hourly fee analyses. Priced at $29/month.
+
+### APIs & Flow
+- **Stripe Checkout**: Users are redirected to a secure Stripe-hosted Checkout session via `POST /api/v1/billing/checkout` to subscribe to the Pro tier.
+- **Stripe Customer Portal**: Active subscribers manage their subscription plan, billing statements, and credit cards via `POST /api/v1/billing/portal`.
+- **Stripe Webhooks**: Listens to secure webhook events on `POST /api/v1/billing/webhook` (no JWT required). It verifies webhook signatures using `Stripe-Signature` and automatically upgrades or downgrades organizations in the database upon events:
+  - `checkout.session.completed` -> Upgrades Organization to PRO / active.
+  - `customer.subscription.deleted` -> Downgrades Organization to FREE / canceled.
+  - `customer.subscription.updated` -> Updates subscription status.
+
+### Entitlement Checks
+Our `EntitlementService` verifies connection limits. If a FREE tier organization attempts to link a second bank connection, the request is rejected with `EntitlementLimitExceededException` (HTTP 403 Forbidden).
+
+---
+
 ## Roadmap & Upcoming Phases
 
 - **Phase 1: Monorepo Scaffolding & Orchestration** [COMPLETED]
@@ -129,13 +152,14 @@ To hook up an enterprise SAML Identity Provider (IdP) in Keycloak:
   - Integrated Keycloak realm and OIDC client scopes.
   - Secured Spring Boot Core Service with OAuth2 Resource Server.
   - Added dynamic user onboarding and auto-provisioning.
-- **Phase 4: Bank Connection & Analysis Engine**
+- **Phase 4: Stripe Billing & Subscription Entitlements** [COMPLETED]
+  - Multi-tier billing (Free vs Pro) using Stripe Subscriptions.
+  - Webhook handlers with mandatory signature verification.
+  - Connection limit entitlement gates and Billing dashboard UI.
+- **Phase 5: Bank Connection & Analysis Engine**
   - Plaid sandbox integration and transaction sync.
   - Plaid token encryption and storage.
   - 8-rule custom fee detection logic.
-- **Phase 5: Stripe Billing & Webhook Processing**
-  - Stripe webhook signature verification and idempotency processing.
-  - Multi-tier entitlement gates.
 - **Phase 6: Premium Dashboard UI**
   - Building the Next.js frontend with full support for user roles, connected accounts, and savings visualization.
 - **Phase 7: Observability, Metrics & Sentry**
