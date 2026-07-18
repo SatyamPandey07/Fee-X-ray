@@ -55,6 +55,41 @@ We intentionally divide the backend into two specialized services:
 
 ---
 
+## Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    ORGANIZATION ||--o{ USER : "owns"
+    ORGANIZATION ||--o{ BANK_CONNECTION : "has"
+
+    ORGANIZATION {
+        uuid id PK
+        string name
+        string subscription_tier
+        timestamptz created_at
+    }
+
+    USER {
+        uuid id PK
+        uuid org_id FK
+        string email
+        string keycloak_subject_id
+        string role
+        timestamptz created_at
+    }
+
+    BANK_CONNECTION {
+        uuid id PK
+        uuid org_id FK
+        string plaid_item_id
+        string institution_name
+        string status
+        timestamptz connected_at
+    }
+```
+
+---
+
 ## Roadmap & Upcoming Phases
 
 - **Phase 1: Monorepo Scaffolding & Orchestration** (Current Phase)
