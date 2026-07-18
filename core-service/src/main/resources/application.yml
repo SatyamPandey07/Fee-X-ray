@@ -9,3 +9,14 @@ management:
   endpoint:
     health:
       show-details: always
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/feexray_core}
+    username: ${SPRING_DATASOURCE_USERNAME:feexray}
+    password: ${SPRING_DATASOURCE_PASSWORD:changeme}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER:http://localhost:8080/realms/fee-xray}

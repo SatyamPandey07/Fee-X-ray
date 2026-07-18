@@ -90,22 +90,53 @@ erDiagram
 
 ---
 
+## Authentication & SSO (Keycloak Integration)
+
+Fee X-ray implements authentication and Single Sign-On (SSO) using OpenID Connect (OIDC) orchestrated by Keycloak.
+
+### OIDC Flow
+- **Next.js Frontend**: Intercepts requests, starts the auth flow, handles the auth code callback, and securely saves the OIDC token in an `httpOnly` secure cookie.
+- **Java Core Service**: Validates JWT signatures using Spring Security's OAuth2 Resource Server.
+
+### Auto-Provisioning
+On first successful OIDC login, `UserOnboardingFilter` intercepts the request:
+1. Validates the Keycloak subject ID (`sub` claim).
+2. If the user does not exist in the database, it automatically creates a new `Organization` (e.g., `"${email}'s Org"`) and registers the user with the role `OWNER`.
+
+### Tenant Isolation & Roles
+- **OWNER**: Can read, update, and manage the organization and its member users.
+- **MEMBER**: Has read-only permissions for organization data.
+- All database queries and modifications are strictly scoped to the tenant organization context to ensure complete tenant boundaries.
+
+### Enterprise SAML SSO Integration
+To hook up an enterprise SAML Identity Provider (IdP) in Keycloak:
+1. In the Keycloak admin console, go to **Identity Providers**.
+2. Select **SAML 2.0**.
+3. Import the metadata XML from your enterprise IdP (e.g., Okta, Azure AD).
+4. Configure Mapper rules to map user SAML groups to Keycloak roles (`OWNER`/`MEMBER`).
+
+---
+
 ## Roadmap & Upcoming Phases
 
-- **Phase 1: Monorepo Scaffolding & Orchestration** (Current Phase)
+- **Phase 1: Monorepo Scaffolding & Orchestration** [COMPLETED]
   - Scaffolding minimal Java/Spring, Python/FastAPI, and Next.js projects.
   - Setting up Docker Compose for local orchestration.
-- **Phase 2: Core Domain Model & Databases**
+- **Phase 2: Core Domain Model & Databases** [COMPLETED]
   - Database schema configuration with Flyway (Core) and Alembic (Analysis).
   - Provisioning of standard entities (Organization, User, Entitlement) and repositories.
-- **Phase 3: Bank Connection & Analysis Engine**
+- **Phase 3: SSO Authentication & Role-Based Access Control** [COMPLETED]
+  - Integrated Keycloak realm and OIDC client scopes.
+  - Secured Spring Boot Core Service with OAuth2 Resource Server.
+  - Added dynamic user onboarding and auto-provisioning.
+- **Phase 4: Bank Connection & Analysis Engine**
   - Plaid sandbox integration and transaction sync.
   - Plaid token encryption and storage.
   - 8-rule custom fee detection logic.
-- **Phase 4: Stripe Billing & Webhook Processing**
+- **Phase 5: Stripe Billing & Webhook Processing**
   - Stripe webhook signature verification and idempotency processing.
   - Multi-tier entitlement gates.
-- **Phase 5: Premium Dashboard UI**
+- **Phase 6: Premium Dashboard UI**
   - Building the Next.js frontend with full support for user roles, connected accounts, and savings visualization.
-- **Phase 6: Observability, Metrics & Sentry**
+- **Phase 7: Observability, Metrics & Sentry**
   - Setting up Prometheus metrics collection, Grafana dashboards, and Sentry tracking.
