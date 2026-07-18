@@ -10,6 +10,12 @@ app = FastAPI(
 
 app.include_router(plaid_router)
 
+from app.messaging import start_messaging_consumer
+
+@app.on_event("startup")
+def startup_event():
+    start_messaging_consumer()
+
 @app.get("/health")
 async def health():
     return {
