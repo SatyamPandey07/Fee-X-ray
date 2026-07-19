@@ -39,7 +39,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         
         if (user != null && user.getOrganization() != null) {
             String orgId = user.getOrganization().getId().toString();
-            String plan = user.getOrganization().getPlan().name();
+            String plan = user.getOrganization().getSubscriptionTier();
             
             Bucket bucket = buckets.computeIfAbsent(orgId, k -> createNewBucket(plan));
             

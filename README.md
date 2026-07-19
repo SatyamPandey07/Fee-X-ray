@@ -87,6 +87,113 @@ erDiagram
     }
 ```
 
+## Clone and Run Locally
+
+If you want to clone this repository, run the application, or build on top of it, please follow these steps.
+
+### Prerequisites
+
+Make sure you have the following installed on your system:
+- **Docker and Docker Compose** (required for starting the databases, queues, and auth services)
+- **Java 21 Development Kit (JDK)** (required for running or compiling the core service locally)
+- **Python 3.11 or higher** (required for running the analysis engine locally)
+- **Node.js 18 or higher with npm** (required for running the frontend locally)
+- **Git** (for cloning the repository)
+
+### 1. Clone the Repository
+
+Open a terminal and run:
+
+```bash
+git clone https://github.com/SatyamPandey07/Fee-X-ray.git
+cd Fee-X-ray
+```
+
+### 2. Configure Environment Variables
+
+Create environment configuration files for the services if you wish to run them outside Docker. The default configs in the repository are preconfigured to connect automatically when running via Docker Compose.
+
+### 3. Spin up the Core Services via Docker
+
+The simplest way to run the entire application, including the front end, back end, database, queue, and identity services, is by using Docker Compose:
+
+```bash
+cd infra
+docker-compose up -d --build
+```
+
+This starts all of the following services:
+- **postgres-core**: Core database on port `5432`
+- **postgres-analysis**: Analysis database on port `5433`
+- **redis**: Cache and Celery broker on port `6379`
+- **rabbitmq**: Message queue on ports `5672` (AMQP) and `15672` (Management Console)
+- **keycloak**: Identity provider on port `8080` (preconfigured with realm and test users)
+- **core-service**: Java Spring Boot backend on port `8081`
+- **analysis-engine**: Python FastAPI engine on port `8000`
+- **frontend**: Next.js user interface on port `3000`
+- **prometheus**: Scraping metrics on port `9090`
+- **grafana**: Dashboard visualization on port `3001`
+
+To view the frontend, navigate to `http://localhost:3000` in your web browser. You can log in using the demo user credentials:
+- **Username**: `owner-demo`
+- **Password**: `owner123`
+
+To access the Grafana metrics dashboard, open `http://localhost:3001` (Default login: `admin` / `admin`).
+
+### 4. Running Services Individually (for Development)
+
+If you are developing and want to run individual components locally rather than in Docker:
+
+**Start Databases and Queues Only**
+```bash
+cd infra
+docker-compose up -d postgres-core postgres-analysis redis rabbitmq keycloak
+```
+
+**Run the Core Service (Java)**
+```bash
+cd core-service
+./gradlew bootRun
+```
+
+**Run the Analysis Engine (Python)**
+```bash
+cd analysis-engine
+python -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+**Run the Frontend (Next.js)**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 5. Running Tests
+
+To run the automated tests for each service:
+
+**Java Core Service Tests**
+```bash
+cd core-service
+./gradlew test
+```
+
+**Python Analysis Engine Tests**
+```bash
+cd analysis-engine
+pytest
+```
+
+**Frontend Lints & Type Checks**
+```bash
+cd frontend
+npm run lint
+```
+
 ## Authentication and Security
 
 Fee X-ray secures user accounts using OpenID Connect orchestrated by Keycloak.
