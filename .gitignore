@@ -7,6 +7,7 @@
 *.class
 *.log
 *.jar
+!**/gradle-wrapper.jar
 *.war
 *.zip
 *.tar.gz
