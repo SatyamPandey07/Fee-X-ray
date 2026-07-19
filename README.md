@@ -25,7 +25,7 @@ Welcome to Fee X-ray! This is a production-grade SaaS fintech platform that conn
 
 ## Product Requirements Document
 
-We have built a comprehensive platform featuring a Java/Spring Boot core service for identity and billing, a Python/FastAPI engine for complex transaction analysis, and a Next.js frontend dashboard. To understand the complete product vision, architecture, and feature breakdown, please read the [Product Requirements Document (PRD)](docs/PRD.pdf).
+We have built a comprehensive platform featuring a Java/Spring Boot core service for identity and billing, a Python/FastAPI engine for complex transaction analysis, and a Next.js frontend dashboard. To understand the complete product vision, architecture, and feature breakdown, please read the [Product Requirements Document (PRD)](https://github.com/SatyamPandey07/Fee-X-ray/blob/main/docs/PRD.pdf).
 
 ## See It In Action
 
