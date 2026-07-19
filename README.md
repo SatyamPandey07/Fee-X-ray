@@ -255,3 +255,15 @@ sequenceDiagram
   - Building the Next.js frontend with full support for user roles, connected accounts, and savings visualization.
 - **Phase 9: Observability, Metrics & Sentry**
   - Setting up Prometheus metrics collection, Grafana dashboards, and Sentry tracking.
+
+## Observability
+
+Fee X-ray implements a robust, locally deployable observability stack:
+
+- **Structured JSON Logging**: Both `core-service` and `analysis-engine` output logs in a structured JSON format with a correlated `X-Request-ID` to easily trace requests across microservice boundaries.
+- **Metrics**: 
+  - Java Core Service exposes `/actuator/prometheus`.
+  - Python Analysis Engine exposes `/metrics`.
+- **Grafana Dashboards**: Access Grafana at [http://localhost:3001](http://localhost:3001) (default login: admin / admin). A pre-configured "Observability Starter" dashboard automatically loads, visualizing request rates, error rates, and latency for both backends.
+- **Sentry Integration**: If `SENTRY_DSN` or `NEXT_PUBLIC_SENTRY_DSN` are provided in the environment, errors across Java, Python, and Next.js are tracked centrally.
+

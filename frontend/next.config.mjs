@@ -1,3 +1,5 @@
+import { withSentryConfig } from '@sentry/nextjs';
+
 /** @type {import('next').NextConfig} */
 const cspHeader = `
     default-src 'self';
@@ -45,4 +47,8 @@ const nextConfig = {
     },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+    org: "fee-x-ray",
+    project: "frontend",
+    silent: true,
+});
