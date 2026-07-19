@@ -1,5 +1,28 @@
 # Fee X-ray
 
+[![CI Pipeline](https://github.com/SatyamPandey07/Fee-X-ray/actions/workflows/ci.yml/badge.svg)](https://github.com/SatyamPandey07/Fee-X-ray/actions/workflows/ci.yml)
+[![CD Pipeline](https://github.com/SatyamPandey07/Fee-X-ray/actions/workflows/cd.yml/badge.svg)](https://github.com/SatyamPandey07/Fee-X-ray/actions/workflows/cd.yml)
+[![CodeQL Analysis](https://github.com/SatyamPandey07/Fee-X-ray/actions/workflows/codeql.yml/badge.svg)](https://github.com/SatyamPandey07/Fee-X-ray/actions/workflows/codeql.yml)
+[![Secret Scan](https://github.com/SatyamPandey07/Fee-X-ray/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/SatyamPandey07/Fee-X-ray/actions/workflows/secret-scan.yml)
+
+![Java](https://img.shields.io/badge/Java-ED8B00?style=flat-square&logo=java&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=flat-square&logo=spring-boot&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
+<br>
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=flat-square&logo=rabbitmq&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Keycloak](https://img.shields.io/badge/Keycloak-231F20?style=flat-square&logo=keycloak&logoColor=white)
+![Stripe](https://img.shields.io/badge/Stripe-008CDD?style=flat-square&logo=stripe&logoColor=white)
+![Plaid](https://img.shields.io/badge/Plaid-111111?style=flat-square&logo=plaid&logoColor=white)
+![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=flat-square&logo=prometheus&logoColor=white)
+![Grafana](https://img.shields.io/badge/Grafana-F46800?style=flat-square&logo=grafana&logoColor=white)
+
 Welcome to Fee X-ray! This is a production-grade SaaS fintech platform that connects to small business bank and payment processor accounts. It automatically detects hidden fees, explains them in plain English, and tracks your savings over time.
 
 ## See It In Action
