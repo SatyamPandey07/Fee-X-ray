@@ -5,7 +5,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,prometheus
   endpoint:
     health:
       show-details: always
@@ -30,3 +30,7 @@ stripe:
   api-key: ${STRIPE_API_KEY:sk_test_mock_123}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_mock_123}
   pro-price-id: ${STRIPE_PRO_PRICE_ID:price_mock_pro}
+
+sentry:
+  dsn: ${SENTRY_DSN:}
+  traces-sample-rate: 1.0

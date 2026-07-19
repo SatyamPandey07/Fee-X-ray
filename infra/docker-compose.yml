@@ -99,6 +99,36 @@ services:
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
 
+  # ── Prometheus (Metrics Scraping) ─────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: fee-xray-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  # ── Grafana (Dashboards) ──────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: fee-xray-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
 volumes:
   pg-core-data:
   pg-analysis-data:
+  prometheus-data:
+  grafana-data:

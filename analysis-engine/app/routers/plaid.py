@@ -8,6 +8,9 @@ from app.database import get_db
 from app.models import PlaidConnection, Transaction, Institution
 from app.security import encrypt_token, decrypt_token
 from app.auth import verify_org_access
+from app.limiter import limiter
+import os
+from fastapi import Request
 
 import plaid
 from plaid.api import plaid_api
@@ -23,9 +26,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/plaid", tags=["Plaid"])
 
 # Plaid API Client Configuration
-PLAID_CLIENT_ID = plaid_client_id = "mock_client_id"
-PLAID_SECRET = plaid_secret = "mock_secret"
-PLAID_ENV = plaid_env = "sandbox"
+PLAID_CLIENT_ID = os.getenv("PLAID_CLIENT_ID", "mock_client_id")
+PLAID_SECRET = os.getenv("PLAID_SECRET", "mock_secret")
+PLAID_ENV = os.getenv("PLAID_ENV", "sandbox")
 
 host = plaid.Environment.Sandbox
 configuration = plaid.Configuration(
@@ -48,7 +51,8 @@ class ExchangeTokenRequest(BaseModel):
     institution_name: str
 
 @router.post("/link-token", status_code=status.HTTP_201_CREATED)
-async def create_link_token(req: LinkTokenRequest):
+@limiter.limit("10/minute")
+async def create_link_token(req: LinkTokenRequest, request: Request):
     try:
         request = LinkTokenCreateRequest(
             user=LinkTokenCreateRequestUser(client_user_id=req.org_id),
@@ -71,8 +75,10 @@ def check_org_access(req: ExchangeTokenRequest, payload: dict = Depends(verify_t
     return payload
 
 @router.post("/exchange-token", status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
 async def exchange_token(
     req: ExchangeTokenRequest,
+    request: Request,
     db: Session = Depends(get_db),
     auth_payload: dict = Depends(check_org_access)):
 
@@ -112,6 +118,9 @@ async def exchange_token(
 
     # 5. Pull sandbox transactions history
     await sync_transactions_history(conn, access_token, db)
+
+    # AUDIT LOGGING
+    logger.info(f"AUDIT_LOG | action=bank_connection_added | orgId={req.org_id} | timestamp={datetime.utcnow().isoformat()} | details=Bank {req.institution_name} connected")
 
     return {
         "status": "success",

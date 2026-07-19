@@ -1,0 +1,111 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [ "develop", "main" ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  path-filter:
+    runs-on: ubuntu-latest
+    outputs:
+      core: ${{ steps.filter.outputs.core }}
+      analysis: ${{ steps.filter.outputs.analysis }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            core:
+              - 'core-service/**'
+            analysis:
+              - 'analysis-engine/**'
+            frontend:
+              - 'frontend/**'
+
+  test-core:
+    needs: path-filter
+    if: ${{ needs.path-filter.outputs.core == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 20
+        uses: actions/setup-java@v4
+        with:
+          java-version: '20'
+          distribution: 'temurin'
+          cache: gradle
+      - name: Test with Gradle
+        working-directory: ./core-service
+        run: ./gradlew test
+
+  test-analysis:
+    needs: path-filter
+    if: ${{ needs.path-filter.outputs.analysis == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install dependencies
+        working-directory: ./analysis-engine
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Test with pytest
+        working-directory: ./analysis-engine
+        run: pytest
+
+  test-frontend:
+    needs: path-filter
+    if: ${{ needs.path-filter.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+      - name: Run lint
+        working-directory: ./frontend
+        run: npm run lint
+      - name: Build test
+        working-directory: ./frontend
+        run: npm run build
+
+  build-and-scan:
+    needs: [test-core, test-analysis, test-frontend]
+    # Run if any test passed or if tests were skipped, but fail if any test failed.
+    if: ${{ always() && contains(needs.*.result, 'success') && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [core-service, analysis-engine, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build image
+        run: docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:${{ github.sha }} ./${{ matrix.service }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'

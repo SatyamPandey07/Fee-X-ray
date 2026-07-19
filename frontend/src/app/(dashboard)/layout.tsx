@@ -15,6 +15,7 @@ interface NavItem {
 /* ─── Navigation structure ───────────────────────────────────────── */
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard",          label: "Overview",    icon: "📊", id: "nav-overview" },
+  { href: "/dashboard/savings",  label: "Findings",    icon: "💡", id: "nav-savings" },
   { href: "/dashboard/analysis", label: "Fee Analysis", icon: "🔍", id: "nav-analysis" },
   { href: "/dashboard/accounts", label: "Accounts",    icon: "🏦", id: "nav-accounts" },
   { href: "/dashboard/settings", label: "Settings",    icon: "⚙️",  id: "nav-settings" },
