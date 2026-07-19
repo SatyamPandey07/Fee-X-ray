@@ -2,6 +2,7 @@
   "id": "fee-xray",
   "realm": "fee-xray",
   "enabled": true,
+  "registrationAllowed": true,
   "roles": {
     "realm": [
       {

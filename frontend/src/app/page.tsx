@@ -117,11 +117,11 @@ function NavBar() {
             Sign in
           </Link>
           <Link
-            href="/api/auth/login"
+            href="/api/auth/register"
             id="nav-cta-btn"
             className="btn-primary text-sm px-5 py-2.5"
           >
-            Get started free
+            Sign up
           </Link>
         </div>
       </div>
@@ -161,11 +161,11 @@ function HeroSection() {
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-slide-up animate-delay-300">
           <Link
-            href="/api/auth/login"
+            href="/api/auth/register"
             id="hero-cta-primary"
             className="btn-primary px-8 py-4 text-base font-semibold rounded-xl"
           >
-            Start saving for free →
+            Sign up for free →
           </Link>
           <Link
             href="#how-it-works"
@@ -412,11 +412,11 @@ function CtaBanner() {
               Connect your accounts in minutes. Your first fee report is free, forever.
             </p>
             <Link
-              href="/api/auth/login"
+              href="/api/auth/register"
               id="footer-cta-btn"
               className="btn-primary inline-block px-10 py-4 text-base font-bold rounded-xl"
             >
-              Get your free fee report →
+              Sign up to get your report →
             </Link>
           </div>
         </div>
