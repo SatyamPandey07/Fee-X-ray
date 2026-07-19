@@ -16,7 +16,7 @@
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
     "react": "^18",
-    "react-dom": "^18",
+    "react-dom": "^19",
     "react-plaid-link": "^4.1.1",
     "recharts": "^3.9.2",
     "tailwind-merge": "^3.6.0"
@@ -24,7 +24,7 @@
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react-dom": "^19",
     "eslint": "^8",
     "eslint-config-next": "14.2.3",
     "postcss": "^8",
