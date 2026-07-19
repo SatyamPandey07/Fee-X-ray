@@ -1,17 +1,22 @@
 # Fee X-ray
 
-A production-grade, multi-service SaaS fintech platform that connects to small business bank and payment processor accounts, automatically detects fees being lost, explains them in plain English, and tracks savings over time.
+Welcome to Fee X-ray! This is a production-grade SaaS fintech platform that connects to small business bank and payment processor accounts. It automatically detects hidden fees, explains them in plain English, and tracks your savings over time.
 
----
+## See It In Action
+
+Check out this quick demonstration of how the application works from start to finish. You can see the login flow, bank connections, the findings dashboard, and organization settings.
+
+![Fee X-ray Demo](./docs/media/demo.webp)
 
 ## Overall Architecture
 
-Fee X-ray is built as a polyglot, multi-service architecture utilizing:
-1. **Core Service (Java / Spring Boot 3)**: Manages users, organizations, authentication, billing, and entitlements.
-2. **Analysis Engine (Python / FastAPI)**: Syncs transaction data via Plaid, runs fee detection rules, and computes analytical insights.
-3. **Frontend (Next.js 14 / TypeScript / Tailwind CSS)**: Provides a premium web dashboard for organizations to monitor and resolve fees.
+Fee X-ray uses a modern, multi-service architecture designed for scale and reliability:
 
-```
+1. **Core Service (Java / Spring Boot 3)**: This service acts as the source of truth. It manages users, organizations, authentication, billing, and strict data access rules.
+2. **Analysis Engine (Python / FastAPI)**: This service handles the heavy lifting of financial data. It syncs transactions via Plaid and runs our specialized fee detection rules.
+3. **Frontend (Next.js 14 / TypeScript / Tailwind CSS)**: This is the user-facing application. It provides a premium, responsive web dashboard for organizations to monitor their savings and resolve fees.
+
+```text
                   ┌─────────────────────────────────┐
                   │            Browser              │
                   │            Next.js 14           │
@@ -37,25 +42,19 @@ Fee X-ray is built as a polyglot, multi-service architecture utilizing:
 └───────────────────────────────┘                     └───────────────────────────────┘
 ```
 
----
+## Why We Chose This Technology Stack
 
-## Why Two Backend Languages?
+We intentionally divided the backend into two specialized services to get the best of both worlds.
 
-We intentionally divide the backend into two specialized services:
+**Java and Spring Boot for the Core Service**
+Owning the core domain (like users, billing, and plans) requires absolute correctness and reliability. Spring Security provides a battle-tested foundation for role-based access control and Single Sign-On. On top of that, Java's strong typing and robust compiler catch many errors before the code even reaches production.
 
-- **Java (Spring Boot) for the Core Service**:
-  - Owning the core domain (users, orgs, billing, and plans) requires absolute, provable correctness and reliability.
-  - Spring Security provides production-grade, battle-tested implementations of role-based access control and OpenID Connect (OIDC).
-  - Strong typing and a robust compiler catch entire classes of errors before code reaches production.
-
-- **Python (FastAPI) for the Analysis Engine**:
-  - Banking integration and data analysis require rapid iterations and support for complex calculations.
-  - Python's data ecosystem (Pandas, NumPy) is perfectly suited for high-volume transaction parsing and running mathematical rules.
-  - FastAPI offers an asynchronous, modern, and high-performance framework for building fast I/O analytics endpoints.
-
----
+**Python and FastAPI for the Analysis Engine**
+Banking integration and data analysis require rapid iterations and support for complex calculations. Python's data ecosystem is perfectly suited for parsing high volumes of transactions and running mathematical rules. FastAPI complements this by offering a modern, asynchronous framework for building incredibly fast analytics endpoints.
 
 ## Entity Relationship Diagram
+
+Here is a visual representation of how our primary data models relate to each other:
 
 ```mermaid
 erDiagram
@@ -88,110 +87,54 @@ erDiagram
     }
 ```
 
----
+## Authentication and Security
 
-## Authentication & SSO (Keycloak Integration)
+Fee X-ray secures user accounts using OpenID Connect orchestrated by Keycloak.
 
-Fee X-ray implements authentication and Single Sign-On (SSO) using OpenID Connect (OIDC) orchestrated by Keycloak.
+When a user logs in, the Next.js frontend intercepts the request and securely saves the token in an `httpOnly` cookie. The Java Core Service then validates these tokens on every API request. 
 
-### OIDC Flow
-- **Next.js Frontend**: Intercepts requests, starts the auth flow, handles the auth code callback, and securely saves the OIDC token in an `httpOnly` secure cookie.
-- **Java Core Service**: Validates JWT signatures using Spring Security's OAuth2 Resource Server.
+We also built an auto-provisioning system. On a user's first successful login, our system checks if they exist in the database. If they do not exist yet, we automatically create a new Organization for them and grant them the Owner role. 
 
-### Auto-Provisioning
-On first successful OIDC login, `UserOnboardingFilter` intercepts the request:
-1. Validates the Keycloak subject ID (`sub` claim).
-2. If the user does not exist in the database, it automatically creates a new `Organization` (e.g., `"${email}'s Org"`) and registers the user with the role `OWNER`.
+Data privacy is our top priority. We enforce strict tenant isolation rules. All database queries and modifications are strictly scoped to the tenant's organization context. Owners can manage the organization, while Members have read-only access.
 
-### Tenant Isolation & Roles
-- **OWNER**: Can read, update, and manage the organization and its member users.
-- **MEMBER**: Has read-only permissions for organization data.
-- All database queries and modifications are strictly scoped to the tenant organization context to ensure complete tenant boundaries.
+## Billing Integration
 
-### Enterprise SAML SSO Integration
-To hook up an enterprise SAML Identity Provider (IdP) in Keycloak:
-1. In the Keycloak admin console, go to **Identity Providers**.
-2. Select **SAML 2.0**.
-3. Import the metadata XML from your enterprise IdP (e.g., Okta, Azure AD).
-4. Configure Mapper rules to map user SAML groups to Keycloak roles (`OWNER`/`MEMBER`).
+We built a seamless, multi-tiered billing system using Stripe Subscriptions.
 
----
+Users start on a Free plan, which is limited to exactly one active bank connection. If they want to unlock unlimited bank connections and scheduled hourly fee analyses, they can upgrade to the Pro plan for a flat monthly fee.
 
----
+Users are redirected to a secure Stripe-hosted Checkout session to subscribe. We listen to secure webhook events from Stripe to automatically upgrade or downgrade organizations in our database in real time.
 
-## Billing & Stripe Integration
+## Bank Connections
 
-Fee X-ray supports multi-tiered billing using Stripe Subscriptions in test mode.
+Fee X-ray connects to user bank accounts via Plaid to securely synchronize financial transactions. 
 
-### Plan Tiers
-- **FREE**: Limited to exactly 1 active bank connection. Auto-analysis runs are disabled.
-- **PRO**: Unlimited bank connections and scheduled hourly fee analyses. Priced at $29/month.
-
-### APIs & Flow
-- **Stripe Checkout**: Users are redirected to a secure Stripe-hosted Checkout session via `POST /api/v1/billing/checkout` to subscribe to the Pro tier.
-- **Stripe Customer Portal**: Active subscribers manage their subscription plan, billing statements, and credit cards via `POST /api/v1/billing/portal`.
-- **Stripe Webhooks**: Listens to secure webhook events on `POST /api/v1/billing/webhook` (no JWT required). It verifies webhook signatures using `Stripe-Signature` and automatically upgrades or downgrades organizations in the database upon events:
-  - `checkout.session.completed` -> Upgrades Organization to PRO / active.
-  - `customer.subscription.deleted` -> Downgrades Organization to FREE / canceled.
-  - `customer.subscription.updated` -> Updates subscription status.
-
-### Entitlement Checks
-Our `EntitlementService` verifies connection limits. If a FREE tier organization attempts to link a second bank connection, the request is rejected with `EntitlementLimitExceededException` (HTTP 403 Forbidden).
-
----
-
-## Bank Connections & Security (Plaid Integration)
-
-Fee X-ray connects to user bank accounts via Plaid to securely synchronize financial transactions.
-
-### Plaid Token Security
-Plaid access tokens represent direct access to a business's banking details and are treated with enterprise-grade security protocols:
-- **Encryption at Rest**: Access tokens are never stored in plain-text. They are encrypted using `cryptography`'s AES-128 Fernet cipher prior to SQL insertion.
-- **Key Rotation**: The encryption key is sourced dynamically from the `ENCRYPTION_KEY` environment variable.
-
-### API Endpoints (Python Analysis Engine)
-- `POST /api/v1/plaid/link-token`: Creates a Plaid Link Token configured for the sandbox environment to initialize the Plaid SDK on the frontend.
-- `POST /api/v1/plaid/exchange-token`: Receives `public_token` and exchanges it for `access_token` and `item_id`. This endpoint:
-  1. Validates the user's OIDC JWT.
-  2. Enforces organization boundaries (verifying user's token `org_id` matches the request body `org_id` to block cross-organization tampering).
-  3. Saves the encrypted access token in the `plaid_connections` table.
-  4. Triggers an automatic sandbox transaction sync, loading transactions into the `transactions` table.
-
----
+Plaid access tokens represent direct access to a business's banking details, so we treat them with enterprise-grade security protocols. Access tokens are never stored in plain-text. They are encrypted using AES-128 cipher prior to insertion into the database, and the encryption keys are rotated dynamically.
 
 ## How Fee Detection Works
 
-Fee X-ray relies on a modular rules engine to evaluate sync'd transaction data, flagging potential savings.
+At the heart of Fee X-ray is a modular rules engine that evaluates your synchronized transaction data to flag potential savings.
 
-### Modular Rules
-1. **Processor Rate Benchmarking**: Compares card-processing fees (Stripe, PayPal, etc.) against interchange-plus benchmarks. If the effective fee rate exceeds 3.5%, it calculates the annual excess cost and flags it.
-2. **Zombie Subscription Detection**: Identifies recurring transactions to SaaS merchants (e.g. Zoom, Adobe, Slack, Dropbox) that have had no user utility or activity recorded in the past 90+ days.
-3. **Unwaived Bank Fee Detection**: Detects typical commercial bank service charges (overdraft, wire fees, monthly maintenance) that can commonly be waived by the financial institution upon courtesy request.
-4. **Undisputed Chargeback Detection**: Identifies customer payment disputes/chargebacks that lack matching reversal or dispute wins. It alerts the user to respond before the dispute window expires.
+Our engine looks for several common issues:
+1. **Processor Rate Benchmarking**: We compare card processing fees against industry standard interchange rates. If your effective fee rate is too high, we flag it.
+2. **Zombie Subscription Detection**: We identify recurring payments to software vendors that have had no user activity recorded in the past 90 days.
+3. **Unwaived Bank Fee Detection**: We detect typical commercial bank service charges (like overdraft or wire fees) that can often be waived by simply calling your bank.
+4. **Undisputed Chargeback Detection**: We find customer payment disputes that lack a matching reversal or win, alerting you before the dispute window expires.
 
-### Rules Engine
-The Rules Engine aggregates findings from each detector, cleanses past results for the tenant organization, persists them in the `findings` table, and returns them sorted descending by `dollar_impact`.
+## Service Integration and Orchestration
 
-### Async Background Tasks (Celery + Redis)
-To avoid blocking request threads, transaction analysis runs asynchronously in a Celery background worker:
-- **Broker**: Redis (`redis://localhost:6379/0`)
-- **Task**: `app.tasks.analyze_org_fees(org_id)`
+The Java Core Service and Python Analysis Engine communicate using a decoupled asynchronous messaging model powered by RabbitMQ. 
 
----
+Here is exactly how a user request flows through the system:
 
-## Service Integration & RabbitMQ Orchestration
-
-Fee X-ray connects the Java Core Service and Python Analysis Engine using a decoupled asynchronous messaging model powered by RabbitMQ.
-
-### Communication Flow & Sequence Diagram
-1. The user logs in and triggers an analysis run via frontend `POST /api/v1/analysis/run`.
-2. Java Core Service writes a local `AnalysisJob` tracking record in state `PENDING`.
-3. Java Core Service publishes a job message containing `{jobId, orgId}` to RabbitMQ exchange `analysis.exchange` (routing key `analysis.request.key`).
-4. Python Analysis Engine has a concurrent listener thread that consumes from queue `analysis.request.queue`.
-5. Python daemon receives the job, invokes the Rules Engine, analyzes transaction records, and saves the new findings.
-6. Python daemon publishes a completion status report containing `{jobId, orgId, status: "COMPLETED", summary}` back to RabbitMQ exchange (routing key `analysis.response.key`).
-7. Java Core Service consumes from queue `analysis.response.queue` via `@RabbitListener` and updates the job status and summary.
-8. Frontend polls `GET /api/v1/analysis/jobs/{jobId}` to check status and render findings to the user.
+1. The user logs in and clicks the button to run an analysis.
+2. The Java Core Service writes a local tracking record and marks it as pending.
+3. The Core Service publishes a job message to RabbitMQ.
+4. The Python Analysis Engine has a concurrent listener thread that picks up the job.
+5. The Python daemon runs the rules engine, analyzes the transaction records, and saves the new findings.
+6. Once finished, the Python daemon publishes a completion status report back to RabbitMQ.
+7. The Java Core Service consumes the completion callback and updates the job status in the database.
+8. The frontend polls the status and renders the results to the user.
 
 ```mermaid
 sequenceDiagram
@@ -223,47 +166,8 @@ sequenceDiagram
     end
 ```
 
----
-
-## Roadmap & Upcoming Phases
-
-- **Phase 1: Monorepo Scaffolding & Orchestration** [COMPLETED]
-  - Scaffolding minimal Java/Spring, Python/FastAPI, and Next.js projects.
-  - Setting up Docker Compose for local orchestration.
-- **Phase 2: Core Domain Model & Databases** [COMPLETED]
-  - Database schema configuration with Flyway (Core) and Alembic (Analysis).
-  - Provisioning of standard entities (Organization, User, Entitlement) and repositories.
-- **Phase 3: SSO Authentication & Role-Based Access Control** [COMPLETED]
-  - Integrated Keycloak realm and OIDC client scopes.
-  - Secured Spring Boot Core Service with OAuth2 Resource Server.
-  - Added dynamic user onboarding and auto-provisioning.
-- **Phase 4: Stripe Billing & Subscription Entitlements** [COMPLETED]
-  - Multi-tier billing (Free vs Pro) using Stripe Subscriptions.
-  - Webhook handlers with mandatory signature verification.
-  - Connection limit entitlement gates and Billing dashboard UI.
-- **Phase 5: Bank Connection & Analysis Engine** [COMPLETED]
-  - Plaid sandbox integration and transaction sync.
-  - Plaid token encryption at rest.
-  - OIDC JWT access verification and cross-tenant boundaries.
-- **Phase 6: Fee Detection Engine** [COMPLETED]
-  - Processor rate benchmarking, zombie subscription detection, unwaived bank fees, and undisputed chargeback rules.
-  - Celery background worker running Redis queue.
-- **Phase 7: Service Integration & Asynchronous Messaging** [COMPLETED]
-  - Decoupled messaging over RabbitMQ exchanges, request/response queues, and routing keys.
-  - Core service status polling endpoints and Python daemon threads.
-- **Phase 8: Premium Dashboard UI**
-  - Building the Next.js frontend with full support for user roles, connected accounts, and savings visualization.
-- **Phase 9: Observability, Metrics & Sentry**
-  - Setting up Prometheus metrics collection, Grafana dashboards, and Sentry tracking.
-
 ## Observability
 
-Fee X-ray implements a robust, locally deployable observability stack:
+Fee X-ray implements a robust observability stack out of the box. Both backend services output logs in a structured JSON format with a correlated Request ID to easily trace requests across microservice boundaries. 
 
-- **Structured JSON Logging**: Both `core-service` and `analysis-engine` output logs in a structured JSON format with a correlated `X-Request-ID` to easily trace requests across microservice boundaries.
-- **Metrics**: 
-  - Java Core Service exposes `/actuator/prometheus`.
-  - Python Analysis Engine exposes `/metrics`.
-- **Grafana Dashboards**: Access Grafana at [http://localhost:3001](http://localhost:3001) (default login: admin / admin). A pre-configured "Observability Starter" dashboard automatically loads, visualizing request rates, error rates, and latency for both backends.
-- **Sentry Integration**: If `SENTRY_DSN` or `NEXT_PUBLIC_SENTRY_DSN` are provided in the environment, errors across Java, Python, and Next.js are tracked centrally.
-
+We also collect detailed metrics. The Java service exposes Prometheus metrics via Spring Actuator, and the Python service exposes them via a custom metrics endpoint. You can view all of this data in a pre-configured Grafana dashboard that automatically loads when you start the application.

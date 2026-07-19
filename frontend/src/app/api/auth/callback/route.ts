@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing authorization code" }, { status: 400 });
   }
 
-  const keycloakUrl = process.env.KEYCLOAK_ISSUER || "http://localhost:8080/realms/fee-xray";
+  const keycloakUrl = process.env.KEYCLOAK_BACKEND_URL || process.env.KEYCLOAK_ISSUER || "http://localhost:8080/realms/fee-xray";
   const clientId = process.env.KEYCLOAK_CLIENT_ID || "fee-xray-client";
   const redirectUri = process.env.NEXTAUTH_URL || "http://localhost:3000/api/auth/callback";
 
