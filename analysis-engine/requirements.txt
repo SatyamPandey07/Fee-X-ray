@@ -4,7 +4,7 @@ pydantic==2.7.1
 plaid-python==22.0.0
 cryptography==42.0.5
 sqlalchemy==2.0.29
-alembic==1.13.1
+alembic==1.18.5
 psycopg2-binary==2.9.9
 python-jose[cryptography]==3.3.0
 python-multipart==0.0.9
