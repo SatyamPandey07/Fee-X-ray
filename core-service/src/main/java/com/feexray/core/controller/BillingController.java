@@ -27,6 +27,7 @@ import java.util.UUID;
 public class BillingController {
 
     private final OrganizationRepository organizationRepository;
+    private final com.feexray.core.service.AuditLogger auditLogger;
 
     @Value("${stripe.api-key}")
     private String apiKey;
@@ -115,6 +116,7 @@ public class BillingController {
                                 org.setSubscriptionStatus("active");
                                 org.setSubscriptionTier("PRO");
                                 organizationRepository.save(org);
+                                auditLogger.logSensitiveAction("billing_tier_changed", org.getId(), null, "Tier upgraded to PRO via Checkout");
                             }
                         }
                     }
@@ -134,6 +136,7 @@ public class BillingController {
                                 org.setSubscriptionTier("FREE");
                             }
                             organizationRepository.save(org);
+                            auditLogger.logSensitiveAction("billing_tier_changed", org.getId(), null, "Tier changed to " + org.getSubscriptionTier() + " via Webhook");
                         }
                     }
                     break;

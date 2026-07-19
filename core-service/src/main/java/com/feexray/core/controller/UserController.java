@@ -23,6 +23,7 @@ public class UserController {
 
     private final UserService userService;
     private final OrganizationService organizationService;
+    private final com.feexray.core.service.AuditLogger auditLogger;
 
     private User getCurrentUser(HttpServletRequest request) {
         User user = (User) request.getAttribute("currentUser");
@@ -79,7 +80,9 @@ public class UserController {
                 .keycloakSubjectId(request.keycloakSubjectId())
                 .role(request.role())
                 .build();
-        return userService.createUser(user);
+        User createdUser = userService.createUser(user);
+        auditLogger.logSensitiveAction("member_invited", request.orgId(), current.getId(), "Invited email: " + request.email() + " with role: " + request.role());
+        return createdUser;
     }
 
     @PutMapping("/{id}")

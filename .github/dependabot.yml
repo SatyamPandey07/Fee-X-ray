@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # Maintain dependencies for Node.js / React (frontend)
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # Maintain dependencies for Gradle / Java (core-service)
+  - package-ecosystem: "gradle"
+    directory: "/core-service"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # Maintain dependencies for pip / Python (analysis-engine)
+  - package-ecosystem: "pip"
+    directory: "/analysis-engine"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
